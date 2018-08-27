@@ -26,7 +26,19 @@ class AlgorithmicSortedStringMatching(algorithmic.AlgorithmicProblem):
 
   @property
   def dev_length(self):
-    return self.train_length * 2
+    return self.train_length
+
+  @property
+  def train_size(self):
+    return 100000
+
+  @property
+  def dev_size(self):
+    return 10000
+
+  @property
+  def num_shards(self):
+    return 10
 
   def generate_data(self, data_dir, _, task_id=-1):
 
@@ -35,7 +47,7 @@ class AlgorithmicSortedStringMatching(algorithmic.AlgorithmicProblem):
       for case in self.generator(nbr_symbols, max_length, nbr_cases):
         new_case = {}
         for feature in case:
-          if feature not in ["targets"]:
+          if feature not in ["targets", "early_stoping_point", "percentage_read"]:
             new_case[feature] = [
                 i + text_encoder.NUM_RESERVED_TOKENS for i in case[feature]
             ] + [text_encoder.EOS_ID]
@@ -80,13 +92,23 @@ class AlgorithmicSortedStringMatching(algorithmic.AlgorithmicProblem):
 
       if keep_prob < 0.5:
         targets = [1]
+        early_stoping_point = [[n for n, i in enumerate(input_string)
+                                if i >= input_symbole][0]]
+
       else:
         input_string = list(filter(lambda s: s != input_symbole, input_string))
         targets = [0]
+        index_of_next_positions = [n for n, i in enumerate(input_string)
+         if i > input_symbole]
+        early_stoping_point = [index_of_next_positions[0] if index_of_next_positions else input_string_length]
 
 
+      percentage_read = [float(early_stoping_point[0]) / input_string_length]
       inputs  =  [int(inp) for inp in ([input_symbole] + input_string)]
-      yield {"inputs": inputs, "targets": targets}
+      yield {"inputs": inputs, "targets": targets,
+             "percentage_read": percentage_read,
+             "early_stoping_point": early_stoping_point
+             }
 
   def eval_metrics(self):
     return [metrics.Metrics.ACC]
