@@ -35,11 +35,10 @@ class AlgorithmicSortedStringMatching(algorithmic.AlgorithmicProblem):
       for case in self.generator(nbr_symbols, max_length, nbr_cases):
         new_case = {}
         for feature in case:
-          new_case[feature] = [
-              i + text_encoder.NUM_RESERVED_TOKENS for i in case[feature]
-          ]
           if feature != "targets":
-            new_case[feature] += [text_encoder.EOS_ID]
+            new_case[feature] = [
+                i + text_encoder.NUM_RESERVED_TOKENS for i in case[feature]
+            ] + [text_encoder.EOS_ID]
         yield new_case
 
     utils.generate_dataset_and_shuffle(
